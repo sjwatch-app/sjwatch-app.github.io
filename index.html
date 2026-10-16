@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>SJ watch</title>
 <meta name="apple-mobile-web-app-title" content="SJ watch">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -14,34 +14,62 @@
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
 <style>
-  html, body { margin: 0; height: 100%; background: #2B1D14; color: #F4E6CB; font-family: -apple-system, Tahoma, sans-serif; }
-  .box { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; text-align: center; }
-  img { width: 120px; height: 120px; border-radius: 28px; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+  html, body { margin: 0; height: 100%; background: #2B1D14; color: #F4E6CB; font-family: -apple-system, Tahoma, sans-serif; overflow: hidden; }
+  /* แอปฝังเต็มจอ (ไม่มีแถบ Google ด้านบน) */
+  #app { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; display: block; background: #2B1D14; }
+  .box { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; text-align: center; background: #2B1D14; overflow: auto; }
+  img { width: 110px; height: 110px; border-radius: 26px; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
   h1 { color: #E6C98F; font-size: 24px; margin: 18px 0 6px; }
   p { margin: 6px 0; line-height: 1.6; }
-  a.btn { display: inline-block; margin-top: 18px; background: #C9A25A; color: #2B1D14; font-weight: 700; padding: 14px 28px; border-radius: 14px; text-decoration: none; font-size: 17px; }
+  a.btn { display: inline-block; margin-top: 16px; background: #C9A25A; color: #2B1D14; font-weight: 700; padding: 14px 28px; border-radius: 14px; text-decoration: none; font-size: 17px; }
   .how { background: #3A2A1D; border: 1px solid #C9A25A; border-radius: 14px; padding: 14px 18px; margin-top: 20px; text-align: left; max-width: 340px; }
   .k { background: #C9A25A; color: #2B1D14; border-radius: 6px; padding: 0 6px; font-weight: 700; }
+  /* แผนสำรอง: เปิดแบบฝังไม่ได้ (เช่น เบราว์เซอร์กันการล็อกอินในหน้าที่ฝัง) → ปุ่มเปิดแบบปกติ */
+  #rescue { position: fixed; left: 12px; right: 12px; bottom: calc(14px + env(safe-area-inset-bottom)); display: none; background: #3A2A1D; border: 1px solid #C9A25A; border-radius: 16px; padding: 12px 14px; text-align: center; box-shadow: 0 6px 20px rgba(0,0,0,.5); z-index: 5; }
+  #rescue p { font-size: 14px; margin: 0 0 8px; }
+  #rescue a { display: block; background: #C9A25A; color: #2B1D14; font-weight: 700; padding: 12px; border-radius: 12px; text-decoration: none; }
 </style>
 </head>
 <body>
-<div class="box">
+<div class="box" id="intro">
   <img src="apple-touch-icon.png" alt="SJ">
   <h1>SJ watch</h1>
   <p id="msg">กำลังเปิดแอป…</p>
-  <a class="btn" id="go" href="https://script.google.com/macros/s/AKfycbyzf64i8oH7y-b9jwxBnDMnDQ5WmCPdtb38j4274-7vypeX5LKxCDokgAOG_TjLc7sZ/exec">เปิดแอป</a>
   <div class="how" id="how" style="display:none">
     <b>เพิ่มไอคอนไว้หน้าจอโฮม (ทำครั้งเดียว)</b>
     <p>1. แตะปุ่มแชร์ <span class="k">⬆</span></p>
     <p>2. แตะ <span class="k">เพิ่มไปยังหน้าจอโฮม</span></p>
     <p>3. เปิด <span class="k">เปิดเป็นเว็บแอป</span> → แตะ <span class="k">เพิ่ม</span></p>
     <p>4. ต่อไปแตะไอคอน SJ ที่หน้าจอโฮม</p>
+    <p style="margin-top:10px">หรือ <a href="#" id="here" style="color:#E6C98F">เปิดแอปในหน้านี้เลย</a></p>
   </div>
 </div>
+<div id="rescue"><p>แอปไม่ขึ้น / ค้างที่หน้าล็อกอิน?</p><a id="plain" href="#">เปิดแบบปกติ</a></div>
 <script>
-  // เปิดจากไอคอนหน้าจอโฮม → เข้าแอปทันที · เปิดใน Safari ปกติ → แสดงวิธีเพิ่มไอคอน (ไม่พาออกจากหน้านี้ ไม่งั้นจะเพิ่มไอคอนผิดหน้า)
+  var APP = 'https://script.google.com/macros/s/AKfycbyzf64i8oH7y-b9jwxBnDMnDQ5WmCPdtb38j4274-7vypeX5LKxCDokgAOG_TjLc7sZ/exec';
+  document.getElementById('plain').href = APP;
   var standalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
-  if (standalone) { location.replace(document.getElementById('go').href); }
+  var loaded = false, timer = null;
+  function rescue() { if (!loaded) document.getElementById('rescue').style.display = 'block'; }
+  // แอปส่งสัญญาณกลับมา: loaded = ผ่านล็อกอินแล้ว · ok = ติดต่อระบบได้ · fail = ติดต่อระบบไม่ได้ (ล็อกอินในหน้าที่ฝังถูกกัน)
+  window.addEventListener('message', function (e) {
+    if (!/\.google(usercontent)?\.com$/.test(new URL(e.origin).hostname)) return;
+    var st = e.data && e.data.sj;
+    if (st === 'loaded' || st === 'ok') { loaded = true; clearTimeout(timer); document.getElementById('rescue').style.display = 'none'; }
+    if (st === 'fail') { loaded = false; rescue(); }
+  });
+  function openApp() {
+    var f = document.createElement('iframe');
+    f.id = 'app'; f.src = APP; f.title = 'SJ watch';
+    f.setAttribute('allow', 'clipboard-write');
+    document.body.appendChild(f);
+    f.addEventListener('load', function () { document.getElementById('intro').style.display = 'none'; });
+    timer = setTimeout(rescue, 12000);          // 12 วินาทียังไม่มีสัญญาณจากแอป → เสนอเปิดแบบปกติ
+  }
+  document.getElementById('here').addEventListener('click', function (e) { e.preventDefault(); openApp(); });
+  // เปิดจากไอคอนหน้าจอโฮม / คอม → เข้าแอปเต็มจอทันที · เปิดใน Safari ครั้งแรก → แสดงวิธีเพิ่มไอคอน
+  var mobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if (standalone || !mobile) openApp();
   else { document.getElementById('msg').textContent = 'หน้าเปิดแอปของร้าน'; document.getElementById('how').style.display = 'block'; }
 </script>
 </body>
